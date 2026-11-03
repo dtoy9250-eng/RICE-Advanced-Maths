@@ -1,35 +1,37 @@
 name: Build RICE for fx-CG50
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  host-tests:
+    name: Host maths and keypad tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Run strict host regression tests
+        working-directory: RICE_Advanced_Maths
+        run: sh tests/run_host_tests.sh
+
   build:
+    name: Build calculator add-in
+    needs: host-tests
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/therainbowphoenix/gint-docker:main
       options: --user root
     timeout-minutes: 45
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Verify and extract RICE source
-        run: |
-          test -s RICE_Build_Source_Min.tar.xz
-          tar -tJf RICE_Build_Source_Min.tar.xz
-          tar -xJf RICE_Build_Source_Min.tar.xz
-          test -f RICE_Advanced_Maths/CMakeLists.txt
-          test -f RICE_Advanced_Maths/src/main.c
-          test -f RICE_Advanced_Maths/src/mathcore.c
-          test -f RICE_Advanced_Maths/assets/icon-uns.png
-          test -f RICE_Advanced_Maths/assets/icon-sel.png
-
-      - name: Locate prebuilt fxSDK and SuperH toolchain
+      - name: Locate fxSDK and SuperH toolchain
+        working-directory: RICE_Advanced_Maths
         run: |
           export PATH="$HOME/.local/bin:/home/dev/.local/bin:/usr/local/bin:$PATH"
           if ! command -v fxsdk >/dev/null 2>&1; then
@@ -46,15 +48,16 @@ jobs:
           command -v sh-elf-gcc
           sh-elf-gcc --version
           fxsdk path sysroot
-
       - name: Build fx-CG50 add-in
         working-directory: RICE_Advanced_Maths
         run: |
           export PATH="$HOME/.local/bin:/home/dev/.local/bin:/usr/local/bin:$PATH"
+          SDK_BIN="$(find /home /opt /usr/local -type f -name fxsdk -perm -111 2>/dev/null | head -n 1 | xargs -r dirname)"
+          GCC_BIN="$(find /home /opt /usr/local -type f -name sh-elf-gcc -perm -111 2>/dev/null | head -n 1 | xargs -r dirname)"
+          export PATH="$SDK_BIN:$GCC_BIN:$PATH"
           fxsdk build-cg
           test -s RICE.g3a
           ls -lh RICE.g3a
-
       - name: Upload RICE.g3a
         uses: actions/upload-artifact@v4
         with:
