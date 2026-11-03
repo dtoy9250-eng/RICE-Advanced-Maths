@@ -9,7 +9,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    container:
+      image: ghcr.io/therainbowphoenix/gint-docker:main
+      options: --user root
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
@@ -26,32 +29,28 @@ jobs:
           test -f RICE_Advanced_Maths/assets/icon-uns.png
           test -f RICE_Advanced_Maths/assets/icon-sel.png
 
-      - name: Install build prerequisites
+      - name: Locate prebuilt fxSDK and SuperH toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl git python3 python3-pil build-essential cmake pkg-config
-
-      - name: Install GiteaPC non-interactively
-        run: |
-          curl -fsSL "https://git.planet-casio.com/Lephenixnoir/GiteaPC/raw/branch/master/install.sh" -o /tmp/giteapc-install.sh
-          yes | bash /tmp/giteapc-install.sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$PATH"
-          command -v giteapc
-
-      - name: Install fxSDK and SH-4 toolchain
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          yes | giteapc install Lephenixnoir/fxsdk Lephenixnoir/sh-elf-binutils Lephenixnoir/sh-elf-gcc Lephenixnoir/sh-elf-gdb
-          yes | giteapc install Lephenixnoir/OpenLibm Vhex-Kernel-Core/fxlibc
-          yes | giteapc install Lephenixnoir/sh-elf-gcc
-          yes | giteapc install Lephenixnoir/gint Lephenixnoir/libprof
+          export PATH="$HOME/.local/bin:/home/dev/.local/bin:/usr/local/bin:$PATH"
+          if ! command -v fxsdk >/dev/null 2>&1; then
+            SDK_BIN="$(find /home /opt /usr/local -type f -name fxsdk -perm -111 2>/dev/null | head -n 1 | xargs -r dirname)"
+            test -n "$SDK_BIN"
+            export PATH="$SDK_BIN:$PATH"
+          fi
+          if ! command -v sh-elf-gcc >/dev/null 2>&1; then
+            GCC_BIN="$(find /home /opt /usr/local -type f -name sh-elf-gcc -perm -111 2>/dev/null | head -n 1 | xargs -r dirname)"
+            test -n "$GCC_BIN"
+            export PATH="$GCC_BIN:$PATH"
+          fi
           command -v fxsdk
           command -v sh-elf-gcc
+          sh-elf-gcc --version
+          fxsdk path sysroot
 
       - name: Build fx-CG50 add-in
         working-directory: RICE_Advanced_Maths
         run: |
+          export PATH="$HOME/.local/bin:/home/dev/.local/bin:/usr/local/bin:$PATH"
           fxsdk build-cg
           test -s RICE.g3a
           file RICE.g3a
