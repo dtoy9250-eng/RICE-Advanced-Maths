@@ -9,7 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
 
     steps:
       - name: Check out repository
@@ -31,20 +31,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl git python3 build-essential cmake pkg-config
 
-      - name: Install GiteaPC
+      - name: Install GiteaPC non-interactively
         run: |
           curl -fsSL "https://git.planet-casio.com/Lephenixnoir/GiteaPC/raw/branch/master/install.sh" -o /tmp/giteapc-install.sh
-          bash /tmp/giteapc-install.sh
+          printf '\n' | bash /tmp/giteapc-install.sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.local/bin" >> "$GITHUB_ENV"
           export PATH="$HOME/.local/bin:$PATH"
           command -v giteapc
           giteapc --help
 
-      - name: Install fxSDK and gint toolchain
+      - name: Install documented fxSDK and SH-4 toolchain
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          giteapc install Lephenixnoir/fxsdk
+          giteapc install Lephenixnoir/fxsdk Lephenixnoir/sh-elf-binutils Lephenixnoir/sh-elf-gcc
+          giteapc install Lephenixnoir/OpenLibm Vhex-Kernel-Core/fxlibc
+          giteapc install Lephenixnoir/sh-elf-gcc
           giteapc install Lephenixnoir/gint
           command -v fxsdk
           command -v sh-elf-gcc
