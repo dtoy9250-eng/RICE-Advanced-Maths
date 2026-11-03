@@ -30,6 +30,74 @@ static void np_space(NumericParser *p)
     while(isspace((unsigned char)*p->cursor)) p->cursor++;
 }
 
+static double reduce_degrees(double degrees)
+{
+    double r = fmod(degrees, 360.0);
+    if(r < 0.0) r += 360.0;
+    return r;
+}
+
+static int deg_is(double r, double target)
+{
+    return fabs(r - target) < 1e-9;
+}
+
+/* Exact values at the common angles so sin(180) is 0, not 1.2e-16. */
+double rice_sin_deg(double degrees)
+{
+    double r = reduce_degrees(degrees);
+    if(deg_is(r, 0) || deg_is(r, 180) || deg_is(r, 360)) return 0.0;
+    if(deg_is(r, 90)) return 1.0;
+    if(deg_is(r, 270)) return -1.0;
+    if(deg_is(r, 30) || deg_is(r, 150)) return 0.5;
+    if(deg_is(r, 210) || deg_is(r, 330)) return -0.5;
+    return sin(r * RICE_PI / 180.0);
+}
+
+double rice_cos_deg(double degrees)
+{
+    double r = reduce_degrees(degrees);
+    if(deg_is(r, 90) || deg_is(r, 270)) return 0.0;
+    if(deg_is(r, 0) || deg_is(r, 360)) return 1.0;
+    if(deg_is(r, 180)) return -1.0;
+    if(deg_is(r, 60) || deg_is(r, 300)) return 0.5;
+    if(deg_is(r, 120) || deg_is(r, 240)) return -0.5;
+    return cos(r * RICE_PI / 180.0);
+}
+
+int rice_tan_deg(double degrees, double *out)
+{
+    double r = reduce_degrees(degrees), c;
+    if(deg_is(r, 90) || deg_is(r, 270)) return 0;
+    if(deg_is(r, 0) || deg_is(r, 180) || deg_is(r, 360)) { *out = 0.0; return 1; }
+    if(deg_is(r, 45) || deg_is(r, 225)) { *out = 1.0; return 1; }
+    if(deg_is(r, 135) || deg_is(r, 315)) { *out = -1.0; return 1; }
+    c = cos(r * RICE_PI / 180.0);
+    if(fabs(c) < 1e-12) return 0;
+    *out = tan(r * RICE_PI / 180.0);
+    return 1;
+}
+
+/* Plain decimal number: digits with an optional point and no exponent, so that
+   "2e3" is 2 x e x 3 (as typed with the e key) rather than scientific 2000. */
+static int scan_plain_number(const char *s, const char **end, double *value)
+{
+    char buf[48];
+    size_t n = 0;
+    int digits = 0, dots = 0;
+    while(isdigit((unsigned char)*s) || (*s == '.' && !dots)) {
+        if(*s == '.') dots = 1; else digits++;
+        if(n + 1 >= sizeof buf) return 0;
+        buf[n++] = *s++;
+    }
+    buf[n] = '\0';
+    if(!digits) return 0;
+    *value = strtod(buf, NULL);
+    if(!isfinite(*value)) return 0;
+    *end = s;
+    return 1;
+}
+
 static double np_expression(NumericParser *p);
 static double np_unary(NumericParser *p);
 
@@ -52,10 +120,9 @@ static double np_primary(NumericParser *p)
     }
 
     if(isdigit((unsigned char)*p->cursor) || *p->cursor == '.') {
-        char *end = NULL;
-        errno = 0;
-        double v = strtod(p->cursor, &end);
-        if(end == p->cursor || errno == ERANGE || !isfinite(v)) {
+        const char *end = NULL;
+        double v = 0.0;
+        if(!scan_plain_number(p->cursor, &end, &v)) {
             np_error(p, "Invalid or out-of-range number");
             return 0.0;
         }
@@ -85,12 +152,12 @@ static double np_primary(NumericParser *p)
             return sqrt(arg);
         }
         if(strcmp(name, "abs") == 0) return fabs(arg);
-        if(strcmp(name, "sin") == 0) return sin(arg * RICE_PI / 180.0);
-        if(strcmp(name, "cos") == 0) return cos(arg * RICE_PI / 180.0);
+        if(strcmp(name, "sin") == 0) return rice_sin_deg(arg);
+        if(strcmp(name, "cos") == 0) return rice_cos_deg(arg);
         if(strcmp(name, "tan") == 0) {
-            double radians = arg * RICE_PI / 180.0;
-            if(fabs(cos(radians)) < 1e-12) { np_error(p, "Tangent is undefined at this angle"); return 0.0; }
-            return tan(radians);
+            double t = 0.0;
+            if(!rice_tan_deg(arg, &t)) { np_error(p, "Tangent is undefined at this angle"); return 0.0; }
+            return t;
         }
         if(strcmp(name, "ln") == 0) {
             if(arg <= 0.0) { np_error(p, "ln requires a positive number"); return 0.0; }
@@ -179,7 +246,7 @@ int rice_eval_expression(const char *expression, double *answer,
         set_error(error, error_size, p.error);
         return 0;
     }
-    *answer = result;
+    *answer = result + 0.0; /* normalises negative zero */
     if(error && error_size) error[0] = '\0';
     return 1;
 }
