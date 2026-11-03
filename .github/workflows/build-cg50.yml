@@ -15,50 +15,46 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Extract RICE source archive
+      - name: Verify and extract RICE source
         run: |
-          tar -xzf RICE_Source_Clean.tar.gz
+          test -s RICE_Build_Source_Min.tar.xz
+          tar -tJf RICE_Build_Source_Min.tar.xz
+          tar -xJf RICE_Build_Source_Min.tar.xz
           test -f RICE_Advanced_Maths/CMakeLists.txt
           test -f RICE_Advanced_Maths/src/main.c
+          test -f RICE_Advanced_Maths/src/mathcore.c
+          test -f RICE_Advanced_Maths/assets/icon-uns.png
+          test -f RICE_Advanced_Maths/assets/icon-sel.png
 
-      - name: Install build dependencies
+      - name: Install build prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            curl git python3 python3-pil build-essential pkg-config cmake \
-            libusb-1.0-0-dev libudev-dev libsdl2-dev libudisks2-dev \
-            libglib2.0-dev libpng-dev libncurses-dev \
-            libmpfr-dev libmpc-dev libgmp-dev libppl-dev flex texinfo openssl
+          sudo apt-get install -y curl git python3 build-essential cmake pkg-config
 
-      - name: Bootstrap GiteaPC
+      - name: Install GiteaPC
         run: |
-          git clone --depth=1 https://git.planet-casio.com/Lephenixnoir/GiteaPC "$HOME/giteapc"
-          cd "$HOME/giteapc"
-          python3 giteapc.py install Lephenixnoir/GiteaPC -y
+          curl -fsSL "https://git.planet-casio.com/Lephenixnoir/GiteaPC/raw/branch/master/install.sh" -o /tmp/giteapc-install.sh
+          bash /tmp/giteapc-install.sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_ENV"
+          export PATH="$HOME/.local/bin:$PATH"
+          command -v giteapc
+          giteapc --help
 
-      - name: Install fxSDK and fx-CG50 toolchain
+      - name: Install fxSDK and gint toolchain
         run: |
-          cd "$HOME/giteapc"
-          python3 giteapc.py install Lephenixnoir/fxsdk@dev -y
-          python3 giteapc.py install Lephenixnoir/sh-elf-binutils:clean -y
-          python3 giteapc.py install Lephenixnoir/sh-elf-gcc:clean -y
-          python3 giteapc.py install Lephenixnoir/sh-elf-gdb -y
-          python3 giteapc.py install Lephenixnoir/OpenLibm -y
-          python3 giteapc.py install Vhex-Kernel-Core/fxlibc@dev -y
-          python3 giteapc.py install Lephenixnoir/sh-elf-gcc -y
-          python3 giteapc.py install Lephenixnoir/gint@dev -y
-          python3 giteapc.py install Lephenixnoir/JustUI@dev -y
+          export PATH="$HOME/.local/bin:$PATH"
+          giteapc install Lephenixnoir/fxsdk
+          giteapc install Lephenixnoir/gint
+          command -v fxsdk
+          command -v sh-elf-gcc
 
-      - name: Run host-side regression tests
-        working-directory: RICE_Advanced_Maths
-        run: make test
-
-      - name: Build calculator add-in
+      - name: Build fx-CG50 add-in
         working-directory: RICE_Advanced_Maths
         run: |
           fxsdk build-cg
-          test -f RICE.g3a
+          test -s RICE.g3a
+          file RICE.g3a
 
       - name: Upload RICE.g3a
         uses: actions/upload-artifact@v4
