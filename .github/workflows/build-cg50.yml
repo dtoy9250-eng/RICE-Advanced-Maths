@@ -53,7 +53,7 @@ jobs:
           export PATH="$HOME/.local/bin:/home/dev/.local/bin:/usr/local/bin:$PATH"
           fxsdk build-cg
           test -s RICE.g3a
-          file RICE.g3a
+          ls -lh RICE.g3a
 
       - name: Upload RICE.g3a
         uses: actions/upload-artifact@v4
