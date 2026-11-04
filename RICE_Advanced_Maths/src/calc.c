@@ -30,7 +30,11 @@ void rice_fmt(double v, int sig, char *out, size_t size)
     if(v == 0.0) v = 0.0; /* turns negative zero into zero */
     if(sig < 1) sig = 1;
     if(sig > 15) sig = 15;
-    snprintf(tmp, sizeof tmp, "%.*g", sig, v);
+    {
+        static const char *const formats[16] = { "%.1g", "%.1g", "%.2g", "%.3g", "%.4g", "%.5g", "%.6g", "%.7g",
+                                                  "%.8g", "%.9g", "%.10g", "%.11g", "%.12g", "%.13g", "%.14g", "%.15g" };
+        snprintf(tmp, sizeof tmp, formats[sig], v);
+    }
     e = strchr(tmp, 'e');
     if(!e) { snprintf(out, size, "%s", tmp); return; }
     {
