@@ -578,7 +578,7 @@ static void complete_square(void)
     ui_form_init(&f, &st);
     while(ui_form_run(&f, &st) == UI_OK) {
         double a = st.value[0], b = st.value[1], c = st.value[2], h, k;
-        char shape[100], lead[40] = "", bracket[60], tail[50] = "";
+        char shape[170], lead[48] = "", bracket[64], tail[56] = "";
         const char *lines[4];
         int n = 0;
         if(fabs(a) < 1e-12) { ui_error(f.title, "a must not be zero", "Enter a genuine quadratic."); continue; }
