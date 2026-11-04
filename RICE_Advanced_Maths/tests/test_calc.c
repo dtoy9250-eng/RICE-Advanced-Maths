@@ -92,7 +92,7 @@ int main(void)
     yes("bounds sub", rice_bounds(5, 0.5, 3, 0.1, 1, &v, &w, &err)); near("bounds sub lo", v, 1.4); near("bounds sub hi", w, 2.6);
     yes("bounds mul", rice_bounds(5, 0.5, 3, 0.1, 2, &v, &w, &err)); near("bounds mul lo", v, 4.5 * 2.9); near("bounds mul hi", w, 5.5 * 3.1);
     yes("bounds div", rice_bounds(10, 0.5, 2, 0.1, 3, &v, &w, &err)); near("bounds div lo", v, 9.5 / 2.1); near("bounds div hi", w, 10.5 / 1.9);
-    yes("bounds neg mul", rice_bounds(-2, 0.5, 3, 0.5, 2, &v, &w, &err)); near("bounds neg lo", v, -1.5 * 3.5); near("bounds neg hi", w, -2.5 * 2.5);
+    yes("bounds neg mul", rice_bounds(-2, 0.5, 3, 0.5, 2, &v, &w, &err)); near("bounds neg lo", v, -2.5 * 3.5); near("bounds neg hi", w, -1.5 * 2.5);
     yes("bounds div zero refused", !rice_bounds(1, 0, 0.05, 0.1, 3, &v, &w, &err));
     yes("sequence", rice_arith_sequence(3, 2, 10, &v, &w, &err)); near("nth", v, 21); near("sum", w, 120);
     yes("sequence n=1.5 refused", !rice_arith_sequence(3, 2, 1.5, &v, &w, &err));
@@ -141,15 +141,15 @@ int main(void)
     /* factorising: integer factors, not decimals */
     factors(1, 5, 6, "(x + 2)(x + 3)");
     factors(2, 7, 3, "(2x + 1)(x + 3)");
-    factors(1, 0, -9, "(x + 3)(x - 3)");
+    factors(1, 0, -9, "(x - 3)(x + 3)");
     factors(1, 6, 9, "(x + 3)^2");
     factors(4, 2, 0, "2x(2x + 1)");
     factors(1, -3, 0, "x(x - 3)");
-    factors(-1, 0, 4, "-(x + 2)(x - 2)");
+    factors(-1, 0, 4, "-(x - 2)(x + 2)");
     factors(6, -7, -3, "(2x - 3)(3x + 1)");
     factors(3, -12, 12, "3(x - 2)^2");
-    factors(0.5, 1.5, 1, "0.5(x + 2)(x + 1)");
-    factors(1, 0, -2, "(x + 1.4142136)(x - 1.4142136)");
+    factors(0.5, 1.5, 1, "0.5(x + 1)(x + 2)");
+    factors(1, 0, -2, "(x - 1.4142136)(x + 1.4142136)");
     factors(1, 0, 1, "No real factors");
     { RiceFactors f; yes("factorise a=0 refused", !rice_factorise_quadratic(0, 1, 1, &f, &err)); }
 
@@ -212,7 +212,8 @@ int main(void)
       yes("sin30 exactly .5", eval("sin(30)", &z) && z == 0.5); yes("cos60 exactly .5", eval("cos(60)", &z) && z == 0.5);
       ev("sin(-30)", -0.5); ev("sin(390)", 0.5); ev("tan(45)", 1); ev("tan(135)", -1); ev("cos(180)", -1); ev("sin(45)", sqrt(0.5));
       yes("tan90 refused", !rice_eval_expression("tan(90)", &z, e, sizeof e)); yes("tan270 refused", !rice_eval_expression("tan(270)", &z, e, sizeof e));
-      ev("2e3", 2 * M_E * 3); ev("2*10^3", 2000); ev("5*10^-3", 0.005); ev("3.5*10^2", 350); ev("2e", 2 * M_E);
+      ev("2e3", 2 * M_E * 3); ev("2*10^3", 2000); ev("5*10^-3", 0.005); ev("3.5*10^2", 350); ev("2e", 2 * M_E); ev("pi2", 2 * M_PI); ev("(2)3", 6);
+      yes("2^3 4 still refused", !rice_eval_expression("2^3 4", &z, e, sizeof e));
       yes("negative zero hidden", eval("0*-1", &z) && !signbit(z)); yes("-0 hidden", eval("-0", &z) && !signbit(z));
       yes("1.2.3 refused", !rice_eval_expression("1.2.3", &z, e, sizeof e)); ev(".5+.25", 0.75); ev("(1+2)(3+4)", 21); ev("2(3)", 6); }
 
