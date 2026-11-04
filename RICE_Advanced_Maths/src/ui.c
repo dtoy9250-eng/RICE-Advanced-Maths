@@ -9,6 +9,15 @@
 #define WRAP_ROWS 40
 #define WRAP_LEN 96
 
+/* Bounded copy that never trips format-truncation checks. */
+static void scopy(char *dst, size_t size, const char *src)
+{
+    size_t n = strlen(src);
+    if(n >= size) n = size - 1;
+    memcpy(dst, src, n);
+    dst[n] = '\0';
+}
+
 /* ---- text -------------------------------------------------------------- */
 int ui_width(const char *s)
 {
@@ -26,15 +35,16 @@ static void fit_text(const char *s, int max_w, char *out, size_t size)
 {
     char tmp[128];
     size_t n;
-    snprintf(out, size, "%s", s);
+    scopy(out, size, s);
     if(ui_width(out) <= max_w) return;
-    snprintf(tmp, sizeof tmp, "%s", s);
+    scopy(tmp, sizeof tmp, s);
     for(n = strlen(tmp); n > 0; n--) {
         tmp[n] = '\0';
-        snprintf(out, size, "%s..", tmp);
+        scopy(out, size, tmp);
+        if(strlen(out) + 3 <= size) memcpy(out + strlen(out), "..", 3);
         if(ui_width(out) <= max_w) return;
     }
-    snprintf(out, size, "%s", "");
+    out[0] = '\0';
 }
 
 void ui_text_box(int x0, int x1, int y, int colour, const char *s, int align)
@@ -138,9 +148,9 @@ static int history_next = 0;
 static void add_history(const char *title, const char *result, const char *working)
 {
     HistoryItem *h = &history[history_next];
-    snprintf(h->title, sizeof h->title, "%s", title);
-    snprintf(h->result, sizeof h->result, "%s", result);
-    snprintf(h->working, sizeof h->working, "%s", working);
+    scopy(h->title, sizeof h->title, title);
+    scopy(h->result, sizeof h->result, result);
+    scopy(h->working, sizeof h->working, working);
     history_next = (history_next + 1) % HISTORY_N;
     if(history_count < HISTORY_N) history_count++;
 }
@@ -151,7 +161,7 @@ int ui_menu(const char *title, const char *const *items, int count, const char *
     static const char *const keys[6] = { "OPEN", NULL, NULL, NULL, NULL, "BACK" };
     int sel = 0, top = 0;
     for(;;) {
-        char num[8];
+        char num[16];
         int num_w = ui_width("00");
         if(sel < top) top = sel;
         if(sel >= top + MENU_ROWS) top = sel - MENU_ROWS + 1;
@@ -194,7 +204,7 @@ static char wrap_rows[WRAP_ROWS][WRAP_LEN];
 
 static void wrap_emit(int *n, const char *line)
 {
-    if(*n < WRAP_ROWS) snprintf(wrap_rows[(*n)++], WRAP_LEN, "%s", line);
+    if(*n < WRAP_ROWS) scopy(wrap_rows[(*n)++], WRAP_LEN, line);
 }
 
 /* Word wrap by measured pixel width; appends to wrap_rows. */
@@ -226,16 +236,17 @@ static void wrap_text(const char *s, int max_w, int *n)
                     used = i;
                 }
             }
-            snprintf(line, sizeof line, "%s", word + used);
+            scopy(line, sizeof line, word + used);
             continue;
         }
-        if(line[0]) snprintf(trial, sizeof trial, "%s %s", line, word);
-        else snprintf(trial, sizeof trial, "%s", word);
+        scopy(trial, sizeof trial, line);
+        if(line[0]) scopy(trial + strlen(trial), sizeof trial - strlen(trial), " ");
+        scopy(trial + strlen(trial), sizeof trial - strlen(trial), word);
         if(ui_width(trial) <= max_w) {
-            snprintf(line, sizeof line, "%s", trial);
+            scopy(line, sizeof line, trial);
         } else {
             wrap_emit(n, line);
-            snprintf(line, sizeof line, "%s", word);
+            scopy(line, sizeof line, word);
         }
     }
     if(line[0]) wrap_emit(n, line);
@@ -254,7 +265,7 @@ static void result_screen(const char *title, const char *const *lines, int count
         int n = 0;
         wrap_text(lines[0] ? lines[0] : "", 330, &n);
         head_rows = n > 3 ? 3 : n;
-        for(int i = 0; i < head_rows; i++) snprintf(head[i], WRAP_LEN, "%s", wrap_rows[i]);
+        for(int i = 0; i < head_rows; i++) scopy(head[i], WRAP_LEN, wrap_rows[i]);
         if(head_rows == 0) { head_rows = 1; head[0][0] = '\0'; }
     }
     detail_rows = 0;
@@ -285,7 +296,7 @@ static void result_screen(const char *title, const char *const *lines, int count
         for(int i = 0; i < visible && top + i < detail_rows; i++)
             dtext(14, y0 + i * 14, UI_MUTED, wrap_rows[top + i]);
         if(detail_rows > visible) {
-            char page[32];
+            char page[64];
             snprintf(page, sizeof page, "%d-%d / %d", top + 1, top + visible < detail_rows ? top + visible : detail_rows, detail_rows);
             ui_text_box(UI_W - 120, UI_W - 12, 188, UI_MUTED, page, 2);
             ui_text_box(12, 200, 188, UI_MUTED, "UP / DOWN to scroll", 0);
@@ -352,7 +363,7 @@ void ui_history_screen(void)
     static const char *const keys_guide[6] = { NULL, NULL, NULL, "PREV", "NEXT", "BACK" };
     int page = 0, selected = 0;
     for(;;) {
-        char head[40];
+        char head[80];
         ui_begin("History and guide");
         if(page == 0) {
             ui_text(12, 32, UI_CYAN, "RECENT RESULTS");
