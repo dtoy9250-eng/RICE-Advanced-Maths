@@ -297,7 +297,7 @@ int rice_factorise_quadratic(double a, double b, double c, RiceFactors *f, const
                 if(den[i] < 0) { den[i] = -den[i]; num[i] = -num[i]; }
                 if(num[i] == 0) den[i] = 1;
             }
-            if(num[0] * den[1] > num[1] * den[0]) {
+            if(num[0] * den[1] < num[1] * den[0]) { /* larger root first: (x + 2)(x + 3) */
                 tmp = num[0]; num[0] = num[1]; num[1] = tmp;
                 tmp = den[0]; den[0] = den[1]; den[1] = tmp;
             }
@@ -365,9 +365,16 @@ void rice_format_factors(const RiceFactors *f, char *out, size_t size)
             add_int_factor(out, size, f->p[1], f->q[1]);
         }
     } else {
-        add_root_factor(out, size, f->r[0]);
-        if(f->repeated) append(out, size, "^2");
-        else add_root_factor(out, size, f->r[1]);
+        if(f->repeated) {
+            add_root_factor(out, size, f->r[0]);
+            append(out, size, "^2");
+        } else if(fabs(f->r[0]) < 1e-10) { /* bare x first */
+            add_root_factor(out, size, f->r[0]);
+            add_root_factor(out, size, f->r[1]);
+        } else {
+            add_root_factor(out, size, f->r[1]);
+            add_root_factor(out, size, f->r[0]);
+        }
     }
 }
 
