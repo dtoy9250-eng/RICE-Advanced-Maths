@@ -6,7 +6,7 @@
 #define HEADER_H 24
 #define MENU_ROWS 7
 #define HISTORY_N 8
-#define WRAP_ROWS 40
+#define WRAP_ROWS 72
 #define WRAP_LEN 96
 
 /* Bounded copy that never trips format-truncation checks. */
