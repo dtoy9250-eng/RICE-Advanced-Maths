@@ -5,32 +5,49 @@
 #include <stdio.h>
 #include <string.h>
 
-#define QUEUE_MAX 256
-#define TEXT_LOG_SIZE 32768
+#define QUEUE_MAX 20000
+#define TEXT_LOG_SIZE 262144
+#define SCREEN_LOG_SIZE 8192
+#define CHAR_W 8   /* deliberately wide: if it fits at 8 px it fits on the calculator */
+#define CHAR_H 9
 static key_event_t queue[QUEUE_MAX];
 static int qread, qwrite;
 static char text_log[TEXT_LOG_SIZE];
+static char screen_log[SCREEN_LOG_SIZE];
+static int overflows, bad_colours;
+static char first_overflow[160];
 
 void fake_gint_reset(void)
 {
     qread = qwrite = 0;
     text_log[0] = '\0';
+    screen_log[0] = '\0';
+    overflows = bad_colours = 0;
+    first_overflow[0] = '\0';
 }
 
-void fake_gint_push_key(int key, int shift)
+void fake_gint_push_key_ex(int key, int shift, int alpha)
 {
-    if(qwrite >= QUEUE_MAX) return;
     key_event_t e = {0};
+    if(qwrite >= QUEUE_MAX) return;
     e.type = KEYEV_DOWN;
     e.key = (unsigned)key;
     e.shift = shift ? 1u : 0u;
+    e.alpha = alpha ? 1u : 0u;
     queue[qwrite++] = e;
 }
+
+void fake_gint_push_key(int key, int shift) { fake_gint_push_key_ex(key, shift, 0); }
 
 int fake_gint_text_contains(const char *needle)
 {
     return needle && strstr(text_log, needle) != NULL;
 }
+const char *fake_gint_log(void) { return text_log; }
+const char *fake_gint_screen(void) { return screen_log; }
+int fake_gint_overflow_count(void) { return overflows; }
+const char *fake_gint_first_overflow(void) { return first_overflow; }
+int fake_gint_bad_colour_count(void) { return bad_colours; }
 
 key_event_t getkey(void)
 {
@@ -51,18 +68,43 @@ int keycode_digit(int keycode)
     }
 }
 
-void dclear(color_t c) { (void)c; }
+color_t fake_rgb(int r, int g, int b)
+{
+    if(r < 0 || r > 31 || g < 0 || g > 31 || b < 0 || b > 31) bad_colours++;
+    return (color_t)(((r & 31) << 11) | ((g & 31) << 6) | (b & 31));
+}
+
+void dclear(color_t c) { (void)c; screen_log[0] = '\0'; }
 void drect(int x1, int y1, int x2, int y2, int c)
 { (void)x1; (void)y1; (void)x2; (void)y2; (void)c; }
+
+void dsize(const char *s, const font_t *font, int *w, int *h)
+{
+    (void)font;
+    if(w) *w = s ? (int)strlen(s) * CHAR_W : 0;
+    if(h) *h = CHAR_H;
+}
+
+static void append(char *dst, size_t size, const char *s, size_t n)
+{
+    size_t used = strlen(dst);
+    if(used + n + 2 < size) {
+        memcpy(dst + used, s, n);
+        dst[used + n] = '\n';
+        dst[used + n + 1] = '\0';
+    }
+}
+
 void dtext(int x, int y, int fg, const char *s)
 {
-    (void)x; (void)y; (void)fg;
+    size_t n;
+    (void)fg;
     if(!s) return;
-    size_t used = strlen(text_log), n = strlen(s);
-    if(used + n + 2 < sizeof text_log) {
-        memcpy(text_log + used, s, n);
-        text_log[used+n] = '\n';
-        text_log[used+n+1] = '\0';
+    n = strlen(s);
+    if(x < 0 || y < 0 || x + (int)n * CHAR_W > 396 || y + CHAR_H > 224) {
+        if(!overflows++) snprintf(first_overflow, sizeof first_overflow, "(%d,%d) '%.100s'", x, y, s);
     }
+    append(text_log, sizeof text_log, s, n);
+    append(screen_log, sizeof screen_log, s, n);
 }
 void dupdate(void) {}
