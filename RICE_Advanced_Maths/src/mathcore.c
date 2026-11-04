@@ -13,6 +13,7 @@
 typedef struct {
     const char *cursor;
     char error[96];
+    int atom; /* last factor was a constant or bracket: a digit may follow */
 } NumericParser;
 
 static void set_error(char *dst, size_t size, const char *message)
@@ -116,6 +117,7 @@ static double np_primary(NumericParser *p)
         p->cursor++;
         double v = np_expression(p);
         if(!np_take(p, ')')) np_error(p, "Missing closing bracket");
+        p->atom = 1;
         return v;
     }
 
@@ -127,6 +129,7 @@ static double np_primary(NumericParser *p)
             return 0.0;
         }
         p->cursor = end;
+        p->atom = 0;
         return v;
     }
 
@@ -138,8 +141,8 @@ static double np_primary(NumericParser *p)
             p->cursor++;
         }
         name[n] = '\0';
-        if(strcmp(name, "pi") == 0) return RICE_PI;
-        if(strcmp(name, "e") == 0) return 2.71828182845904523536;
+        if(strcmp(name, "pi") == 0) { p->atom = 1; return RICE_PI; }
+        if(strcmp(name, "e") == 0) { p->atom = 1; return 2.71828182845904523536; }
         if(!np_take(p, '(')) {
             np_error(p, "A function must be followed by brackets");
             return 0.0;
@@ -147,6 +150,7 @@ static double np_primary(NumericParser *p)
         double arg = np_expression(p);
         if(!np_take(p, ')')) np_error(p, "Missing function closing bracket");
         if(p->error[0]) return 0.0;
+        p->atom = 1;
         if(strcmp(name, "sqrt") == 0) {
             if(arg < 0.0) { np_error(p, "Square root of a negative number"); return 0.0; }
             return sqrt(arg);
@@ -199,6 +203,7 @@ static double np_unary(NumericParser *p)
 static int np_starts_implicit_factor(NumericParser *p)
 {
     np_space(p);
+    if(p->atom && (isdigit((unsigned char)*p->cursor) || *p->cursor == '.')) return 1;
     return *p->cursor == '(' || isalpha((unsigned char)*p->cursor);
 }
 
