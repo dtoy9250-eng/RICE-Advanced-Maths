@@ -242,7 +242,7 @@ int rice_eval_expression(const char *expression, double *answer,
         set_error(error, error_size, "Invalid expression input");
         return 0;
     }
-    NumericParser p = { expression, "" };
+    NumericParser p = { expression, "", 0 };
     double result = np_expression(&p);
     np_space(&p);
     if(!p.error[0] && *p.cursor) np_error(&p, "Unexpected character in expression");
