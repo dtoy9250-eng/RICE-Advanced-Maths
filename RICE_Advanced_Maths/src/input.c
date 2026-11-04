@@ -516,7 +516,7 @@ static char field_char(int idx) { return idx < 10 ? (char)('0' + idx) : (char)('
 int ui_poly_form(UiPolyForm *pf, UiPolyState *ps, RicePolynomial polys[2], double extras[6])
 {
     static char rowbuf[UI_FORM_ROWS][120];
-    static char namebuf[UI_FORM_FIELDS][48];
+    static char namebuf[UI_FORM_FIELDS][64];
     static char fkbuf[4][20];
     int block_of[UI_FORM_FIELDS], power_of[UI_FORM_FIELDS];
     if(pf->degree[0] < pf->min_degree) pf->degree[0] = pf->min_degree;
