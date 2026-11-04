@@ -354,9 +354,16 @@ void rice_format_factors(const RiceFactors *f, char *out, size_t size)
     else rice_fmt(f->k, 9, lead, sizeof lead);
     append(out, size, lead);
     if(f->status == 1) {
-        add_int_factor(out, size, f->p[0], f->q[0]);
-        if(f->repeated) append(out, size, "^2");
-        else add_int_factor(out, size, f->p[1], f->q[1]);
+        if(f->repeated) {
+            add_int_factor(out, size, f->p[0], f->q[0]);
+            append(out, size, "^2");
+        } else if(f->q[1] == 0) { /* a bare x factor reads best first: 2x(2x + 1) */
+            add_int_factor(out, size, f->p[1], f->q[1]);
+            add_int_factor(out, size, f->p[0], f->q[0]);
+        } else {
+            add_int_factor(out, size, f->p[0], f->q[0]);
+            add_int_factor(out, size, f->p[1], f->q[1]);
+        }
     } else {
         add_root_factor(out, size, f->r[0]);
         if(f->repeated) append(out, size, "^2");
