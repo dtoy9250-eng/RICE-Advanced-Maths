@@ -175,7 +175,17 @@ static void stats_regression(void)
         for(int i = 0; i < count2; i++) { xs[i] = list2[2 * i]; ys[i] = list2[2 * i + 1]; }
         if(!rice_regression(xs, ys, count2, &m, &c, &r, &has_r, &err)) { ui_error("Regression and correlation", err, "The x values must not all be the same."); return; }
     }
-    lines[n++] = tp("y = %s x %c %s", tf(m), c < 0 ? '-' : '+', tf(fabs(c)));
+    {
+        char head[48], tail[48] = "";
+        if(fabs(m) < 1e-12) snprintf(head, sizeof head, "%s", tf(c));
+        else {
+            if(fabs(m - 1.0) < 1e-12) snprintf(head, sizeof head, "x");
+            else if(fabs(m + 1.0) < 1e-12) snprintf(head, sizeof head, "-x");
+            else snprintf(head, sizeof head, "%sx", tf(m));
+            if(fabs(c) >= 1e-12) snprintf(tail, sizeof tail, " %c %s", c < 0 ? '-' : '+', tf(fabs(c)));
+        }
+        lines[n++] = tp("y = %s%s", head, tail);
+    }
     if(has_r) {
         double a = fabs(r);
         strength = a >= 0.8 ? "strong" : a >= 0.5 ? "moderate" : "weak";
