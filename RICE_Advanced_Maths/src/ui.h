@@ -95,7 +95,8 @@ int ui_form_run(const UiForm *form, UiFormState *state);
 
 /* ---- input: data table ------------------------------------------------- */
 #define UI_TABLE_MAX 20
-/* Rows of 1 or 2 columns. On UI_OK, *nrows complete rows are in data. */
+/* Rows of 1 or 2 columns. *nrows rows already in data are shown first. On UI_OK,
+   the *nrows complete rows are stored back in data. */
 int ui_table(const char *title, const char *const *columns, int ncols,
              double *data, int *nrows, int min_rows, const char *action);
 
