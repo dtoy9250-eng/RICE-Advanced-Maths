@@ -14,7 +14,8 @@ static key_event_t queue[QUEUE_MAX];
 static int qread, qwrite;
 static char text_log[TEXT_LOG_SIZE];
 static char screen_log[SCREEN_LOG_SIZE];
-static int overflows, bad_colours;
+static int overflows, bad_colours, logging = 1;
+static size_t text_len, screen_len;
 static char first_overflow[160];
 
 void fake_gint_reset(void)
@@ -22,6 +23,7 @@ void fake_gint_reset(void)
     qread = qwrite = 0;
     text_log[0] = '\0';
     screen_log[0] = '\0';
+    text_len = screen_len = 0;
     overflows = bad_colours = 0;
     first_overflow[0] = '\0';
 }
@@ -74,7 +76,8 @@ color_t fake_rgb(int r, int g, int b)
     return (color_t)(((r & 31) << 11) | ((g & 31) << 6) | (b & 31));
 }
 
-void dclear(color_t c) { (void)c; screen_log[0] = '\0'; }
+void dclear(color_t c) { (void)c; screen_log[0] = '\0'; screen_len = 0; }
+void fake_gint_logging(int on) { logging = on; }
 void drect(int x1, int y1, int x2, int y2, int c)
 { (void)x1; (void)y1; (void)x2; (void)y2; (void)c; }
 
@@ -85,13 +88,13 @@ void dsize(const char *s, const font_t *font, int *w, int *h)
     if(h) *h = CHAR_H;
 }
 
-static void append(char *dst, size_t size, const char *s, size_t n)
+static void append(char *dst, size_t *used, size_t size, const char *s, size_t n)
 {
-    size_t used = strlen(dst);
-    if(used + n + 2 < size) {
-        memcpy(dst + used, s, n);
-        dst[used + n] = '\n';
-        dst[used + n + 1] = '\0';
+    if(*used + n + 2 < size) {
+        memcpy(dst + *used, s, n);
+        dst[*used + n] = '\n';
+        dst[*used + n + 1] = '\0';
+        *used += n + 1;
     }
 }
 
@@ -104,7 +107,8 @@ void dtext(int x, int y, int fg, const char *s)
     if(x < 0 || y < 0 || x + (int)n * CHAR_W > 396 || y + CHAR_H > 224) {
         if(!overflows++) snprintf(first_overflow, sizeof first_overflow, "(%d,%d) '%.100s'", x, y, s);
     }
-    append(text_log, sizeof text_log, s, n);
-    append(screen_log, sizeof screen_log, s, n);
+    if(!logging) return;
+    append(text_log, &text_len, sizeof text_log, s, n);
+    append(screen_log, &screen_len, sizeof screen_log, s, n);
 }
 void dupdate(void) {}
