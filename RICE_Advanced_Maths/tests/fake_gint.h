@@ -11,4 +11,6 @@ const char *fake_gint_first_overflow(void);
 int fake_gint_bad_colour_count(void);
 /* Text drawn since the last dclear, i.e. the current screen. */
 const char *fake_gint_screen(void);
+/* Turn text logging off for long fuzz runs (layout checks still run). */
+void fake_gint_logging(int on);
 #endif
