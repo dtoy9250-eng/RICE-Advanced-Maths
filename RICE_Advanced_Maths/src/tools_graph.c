@@ -135,7 +135,7 @@ static void graph_table(void)
     UiPolyState ps;
     RicePolynomial p[2];
     double ex[6];
-    static char rows[62][44];
+    static char rows[62][72];
     const char *lines[62];
     memset(&ps, 0, sizeof ps);
     while(ui_poly_form(&pf, &ps, p, ex)) {
