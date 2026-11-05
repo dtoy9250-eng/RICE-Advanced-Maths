@@ -212,6 +212,10 @@ static void wrap_text(const char *s, int max_w, int *n)
 {
     char line[WRAP_LEN] = "", trial[2 * WRAP_LEN], word[WRAP_LEN];
     const char *p = s;
+    if(ui_width(s) <= max_w) { /* fits: keep the spacing exactly as written */
+        wrap_emit(n, s);
+        return;
+    }
     while(*p) {
         size_t wl;
         const char *w0;
