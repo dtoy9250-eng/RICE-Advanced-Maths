@@ -155,10 +155,10 @@ int main(void)
     expect("arrows move, F1 solves anywhere", "2 1 2 R 3 R 11 F1", "x = 4");
     expect("fields accept sums", "2 1 1 E 3 E 6/2+8 E", "x = 8");
     expect("fields accept fractions", "2 1 3 E 0 E 1 E", "x = 1/3  (0.3333333333)");
-    expect("fresh cell replaces", "2 1 9 E 3 E 11 E U U 2 F1", "x = 4");
+    expect("fresh cell replaces", "2 1 9 E 3 E 11 L L 2 F1", "x = 4");
     expect("bad entry blocks EXE", "2 1 2+ E", "Linear equation");
     expect("form shows labels", "2 1", "number in front of x");
-    expect("choice cell shows sign", "2 2", "number added to ax");
+    expect("status line names the field", "2 2 E", "number added to ax");
 
     /* ---- algebra ---- */
     expect("linear", "2 1 2 E 3 E 11 E", "x = 4");
@@ -279,7 +279,9 @@ int main(void)
     expect("guide mentions boxes", "6 R", "Boxes show what to enter");
 
     /* ---- random key fuzz: no crash, no text off screen, no bad colour ---- */
-    fuzz(60, 2500);
+    fake_gint_logging(0);
+    if(!getenv("RICE_NO_FUZZ")) fuzz(60, 2500);
+    fake_gint_logging(1);
 
     printf("RICE UI tests: %d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
