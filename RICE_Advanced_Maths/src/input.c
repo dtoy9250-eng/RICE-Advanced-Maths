@@ -401,12 +401,16 @@ int ui_table(const char *title, const char *const *columns, int ncols,
              double *data, int *nrows, int min_rows, const char *action)
 {
     char t[UI_TABLE_MAX][2][UI_CELL];
+    double stage[UI_TABLE_MAX * 2];
     const char *keys[6];
     int row = 0, col = 0, top = 0, fresh = 1, cw, x0 = 58;
     char err[96] = "";
     memset(t, 0, sizeof t);
     if(ncols < 1) ncols = 1;
     if(ncols > 2) ncols = 2;
+    /* start from the rows already stored, so a list is kept between tools */
+    for(int r = 0; r < *nrows && r < UI_TABLE_MAX; r++)
+        for(int c = 0; c < ncols; c++) rice_fmt(data[r * ncols + c], 10, t[r][c], UI_CELL);
     cw = ncols == 1 ? 170 : 130;
     keys[0] = action ? action : "CALC"; keys[1] = "CLEAR"; keys[2] = "DEL ROW";
     keys[3] = NULL; keys[4] = NULL; keys[5] = "BACK";
@@ -470,14 +474,14 @@ int ui_table(const char *title, const char *const *columns, int ncols,
                     if(filled < ncols) { snprintf(err, sizeof err, "Row %d is incomplete", r + 1); row = r; ok = 0; break; }
                     for(int c = 0; c < ncols; c++) {
                         char e[64];
-                        if(!ui_eval_field(t[r][c], &data[count * ncols + c], e, sizeof e)) {
+                        if(!ui_eval_field(t[r][c], &stage[count * ncols + c], e, sizeof e)) {
                             snprintf(err, sizeof err, "Row %d: %.60s", r + 1, e); row = r; col = c; ok = 0; break;
                         }
                     }
                     if(ok) count++;
                 }
                 if(ok && count < min_rows) { snprintf(err, sizeof err, "Enter at least %d %s", min_rows, ncols == 1 ? "values" : "pairs"); ok = 0; }
-                if(ok) { *nrows = count; return UI_OK; }
+                if(ok) { memcpy(data, stage, (size_t)(count * ncols) * sizeof(double)); *nrows = count; return UI_OK; }
                 fresh = 1;
             } else if(k == KEY_F2) {
                 memset(t, 0, sizeof t); row = col = top = 0; fresh = 1;
