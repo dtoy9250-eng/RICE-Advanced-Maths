@@ -363,15 +363,17 @@ int ui_form_run(const UiForm *f, UiFormState *st)
             } else if(f->choices[cur]) {
                 int n = choice_count(f->choices[cur]), d = keycode_digit(k), cur_v = (int)st->value[cur];
                 if(d >= 1 && d <= n) cur_v = d - 1;
-                else if(k == KEY_ADD) cur_v = (cur_v + 1) % n;
-                else if(k == KEY_SUB || k == KEY_NEG) cur_v = (cur_v + n - 1) % n;
-                else if(k == KEY_MUL || k == KEY_DIV) {
-                    char want = k == KEY_MUL ? 'x' : '/';
-                    for(int c = 0; c < n; c++) {
+                else if(k == KEY_ADD || k == KEY_SUB || k == KEY_MUL || k == KEY_DIV || k == KEY_NEG) {
+                    char want = k == KEY_ADD ? '+' : k == KEY_SUB ? '-' : k == KEY_MUL ? 'x' : k == KEY_DIV ? '/' : '\0';
+                    int found = -1;
+                    for(int c = 0; c < n && want; c++) {
                         char lab[24];
                         choice_label(f->choices[cur], c, lab, sizeof lab);
-                        if(lab[0] == want) cur_v = c;
+                        if(lab[0] == want) found = c;
                     }
+                    if(found >= 0) cur_v = found;                       /* the option shown with that symbol */
+                    else if(k == KEY_ADD || k == KEY_MUL) cur_v = (cur_v + 1) % n;  /* otherwise step through */
+                    else cur_v = (cur_v + n - 1) % n;
                 }
                 st->value[cur] = cur_v;
             } else {
