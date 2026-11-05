@@ -142,7 +142,7 @@ static void graph_table(void)
         double start = ex[0], end = ex[1], step = ex[2];
         int n, count = 0;
         if(step <= 0 || end < start) { ui_error(pf.title, "Check the numbers", "The step must be above zero and the last x must not be below the first."); continue; }
-        n = (int)floor((end - start) / step + 1e-9) + 1;
+        { double nd = floor((end - start) / step + 1e-9) + 1.0; n = nd > 61.0 ? 61 : (int)nd; }
         if(n > 60) { ui_error(pf.title, "Too many rows (60 is the most)", "Use a larger step or a shorter range."); continue; }
         snprintf(rows[count], sizeof rows[count], "%d values of f(x) = %.20s", n, poly_text(&p[0]));
         lines[count] = rows[count]; count++;
