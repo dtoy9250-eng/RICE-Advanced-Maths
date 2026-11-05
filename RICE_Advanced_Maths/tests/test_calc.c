@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define RICE_TEST_PI 3.14159265358979323846
+#define RICE_TEST_E 2.71828182845904523536
+
 static int checks = 0, failures = 0;
 
 static void near(const char *name, double got, double want)
@@ -194,11 +197,11 @@ int main(void)
       yes("rectangle", rice_shape(0, r, &v, &err)); near("rect", v, 12);
       yes("triangle", rice_shape(1, t, &v, &err)); near("tri", v, 12);
       { const double z[] = { 3, 5, 4 }; yes("trapezium", rice_shape(2, z, &v, &err)); near("trap", v, 16); }
-      { const double z[] = { 1 }; yes("circle", rice_shape(3, z, &v, &err)); near("circ", v, M_PI); }
+      { const double z[] = { 1 }; yes("circle", rice_shape(3, z, &v, &err)); near("circ", v, RICE_TEST_PI); }
       { const double z[] = { 2, 3, 4 }; yes("cuboid", rice_shape(5, z, &v, &err)); near("cub", v, 24); }
-      { const double z[] = { 1, 2 }; yes("cylinder", rice_shape(6, z, &v, &err)); near("cyl", v, 2 * M_PI); }
-      { const double z[] = { 3 }; yes("sphere", rice_shape(7, z, &v, &err)); near("sph", v, 36 * M_PI); }
-      { const double z[] = { 3, 4 }; yes("cone", rice_shape(8, z, &v, &err)); near("cone", v, 12 * M_PI); }
+      { const double z[] = { 1, 2 }; yes("cylinder", rice_shape(6, z, &v, &err)); near("cyl", v, 2 * RICE_TEST_PI); }
+      { const double z[] = { 3 }; yes("sphere", rice_shape(7, z, &v, &err)); near("sph", v, 36 * RICE_TEST_PI); }
+      { const double z[] = { 3, 4 }; yes("cone", rice_shape(8, z, &v, &err)); near("cone", v, 12 * RICE_TEST_PI); }
       { const double z[] = { -1, 2 }; yes("negative dim refused", !rice_shape(0, z, &v, &err)); }
       yes("sss congruent", rice_sss(tz, tc) == 1);
       { const double sh2[] = { 5, 3, 4 }; yes("sss reordered", rice_sss(tz, sh2) == 1); }
@@ -212,7 +215,7 @@ int main(void)
       yes("sin30 exactly .5", eval("sin(30)", &z) && z == 0.5); yes("cos60 exactly .5", eval("cos(60)", &z) && z == 0.5);
       ev("sin(-30)", -0.5); ev("sin(390)", 0.5); ev("tan(45)", 1); ev("tan(135)", -1); ev("cos(180)", -1); ev("sin(45)", sqrt(0.5));
       yes("tan90 refused", !rice_eval_expression("tan(90)", &z, e, sizeof e)); yes("tan270 refused", !rice_eval_expression("tan(270)", &z, e, sizeof e));
-      ev("2e3", 2 * M_E * 3); ev("2*10^3", 2000); ev("5*10^-3", 0.005); ev("3.5*10^2", 350); ev("2e", 2 * M_E); ev("pi2", 2 * M_PI); ev("(2)3", 6);
+      ev("2e3", 2 * RICE_TEST_E * 3); ev("2*10^3", 2000); ev("5*10^-3", 0.005); ev("3.5*10^2", 350); ev("2e", 2 * RICE_TEST_E); ev("pi2", 2 * RICE_TEST_PI); ev("(2)3", 6);
       yes("2^3 4 still refused", !rice_eval_expression("2^3 4", &z, e, sizeof e));
       yes("negative zero hidden", eval("0*-1", &z) && !signbit(z)); yes("-0 hidden", eval("-0", &z) && !signbit(z));
       yes("1.2.3 refused", !rice_eval_expression("1.2.3", &z, e, sizeof e)); ev(".5+.25", 0.75); ev("(1+2)(3+4)", 21); ev("2(3)", 6); }
