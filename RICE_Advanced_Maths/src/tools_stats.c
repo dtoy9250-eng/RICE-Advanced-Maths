@@ -170,7 +170,6 @@ static void stats_regression(void)
     const char *err = "", *lines[5], *strength = "";
     int n = 0;
     if(ui_table("Regression and correlation", cols, 2, list2, &count2, 2, "CALC") != UI_OK) return;
-    if(!rice_regression(list2, list2 + 0, 0, &m, &c, &r, &has_r, &err)) { /* placeholder to keep types honest */ }
     {
         double xs[UI_TABLE_MAX], ys[UI_TABLE_MAX];
         for(int i = 0; i < count2; i++) { xs[i] = list2[2 * i]; ys[i] = list2[2 * i + 1]; }
