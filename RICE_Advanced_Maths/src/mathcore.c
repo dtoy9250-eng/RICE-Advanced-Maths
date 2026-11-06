@@ -203,7 +203,7 @@ static double np_unary(NumericParser *p)
 static int np_starts_implicit_factor(NumericParser *p)
 {
     np_space(p);
-    if(p->atom && (isdigit((unsigned char)*p->cursor) || *p->cursor == '.')) return 1;
+    if(p->atom && (isdigit((unsigned char)*p->cursor) || (*p->cursor == '.' && isdigit((unsigned char)p->cursor[1])))) return 1;
     return *p->cursor == '(' || isalpha((unsigned char)*p->cursor);
 }
 
@@ -211,6 +211,7 @@ static double np_term(NumericParser *p)
 {
     double v = np_unary(p);
     for(;;) {
+        if(p->error[0]) return 0.0; /* a failed factor must never loop */
         if(np_take(p, '*')) v *= np_unary(p);
         else if(np_take(p, '/')) {
             double d = np_unary(p);
@@ -609,11 +610,24 @@ static double roots_bisect(const RicePolynomial *p,double left,double right)
     double fl=rice_polynomial_evaluate(p,left);
     for(int i=0;i<100;i++) {
         double mid=left+(right-left)*0.5, fm=rice_polynomial_evaluate(p,mid);
-        if(root_near_zero(p,mid,fm) || fabs(right-left)<1e-12*(1.0+fabs(mid))) return mid;
+        if(fm==0.0 || fabs(right-left)<=1e-15*(1.0+fabs(mid))) return mid;
         if((fl<0.0 && fm>0.0)||(fl>0.0 && fm<0.0)) right=mid;
         else { left=mid; fl=fm; }
     }
     return left+(right-left)*0.5;
+}
+/* A few safeguarded Newton steps so a root is accurate to machine precision. */
+static double roots_polish(const RicePolynomial *p,double x)
+{
+    RicePolynomial d; rice_polynomial_derivative(p,&d);
+    for(int i=0;i<8;i++) {
+        double f=rice_polynomial_evaluate(p,x), df=rice_polynomial_evaluate(&d,x), nx;
+        if(f==0.0 || !isfinite(f) || !isfinite(df) || fabs(df)<1e-300) break;
+        nx=x-f/df;
+        if(!isfinite(nx) || fabs(rice_polynomial_evaluate(p,nx))>fabs(f)) break;
+        x=nx;
+    }
+    return x;
 }
 static int roots_recursive(const RicePolynomial *p,double lo,double hi,double *roots,size_t capacity)
 {
@@ -643,5 +657,7 @@ int rice_polynomial_real_roots(const RicePolynomial *p,double min_x,double max_x
 {
     if(!p||!roots||capacity==0||!isfinite(min_x)||!isfinite(max_x)||min_x>max_x) return 0;
     RicePolynomial clean=*p; poly_trim(&clean);
-    return roots_recursive(&clean,min_x,max_x,roots,capacity);
+    int n=roots_recursive(&clean,min_x,max_x,roots,capacity);
+    for(int i=0;i<n;i++) { double r=roots_polish(&clean,roots[i]); if(r>=min_x && r<=max_x) roots[i]=r; }
+    return n;
 }
