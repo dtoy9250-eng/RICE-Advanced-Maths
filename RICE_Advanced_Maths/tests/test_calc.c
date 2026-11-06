@@ -1,8 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
 #include "calc.h"
 #include "mathcore.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define RICE_TEST_PI 3.14159265358979323846
 #define RICE_TEST_E 2.71828182845904523536
@@ -14,6 +17,14 @@ static void near(const char *name, double got, double want)
     checks++;
     if(!isfinite(got) || fabs(got - want) > 1e-9 * (fabs(want) + 1.0)) {
         printf("FAIL: %s: got %.12g want %.12g\n", name, got, want);
+        failures++;
+    }
+}
+static void precise(const char *name, double got, double want)
+{
+    checks++;
+    if(!isfinite(got) || fabs(got - want) > 1e-13 * (fabs(want) + 1.0)) {
+        printf("FAIL: %s: got %.17g want %.17g\n", name, got, want);
         failures++;
     }
 }
@@ -219,6 +230,54 @@ int main(void)
       yes("2^3 4 still refused", !rice_eval_expression("2^3 4", &z, e, sizeof e));
       yes("negative zero hidden", eval("0*-1", &z) && !signbit(z)); yes("-0 hidden", eval("-0", &z) && !signbit(z));
       yes("1.2.3 refused", !rice_eval_expression("1.2.3", &z, e, sizeof e)); ev(".5+.25", 0.75); ev("(1+2)(3+4)", 21); ev("2(3)", 6); }
+
+    /* polynomial roots must be accurate to machine precision (was ~1e-8) */
+    { RicePolynomial p;
+      double r[8];
+      char e[96];
+      int n;
+      yes("parse quadratic", rice_parse_polynomial("x^2-5x+6", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("quadratic has two roots", n == 2); precise("root 2", r[0], 2.0); precise("root 3", r[1], 3.0);
+      yes("parse cubic", rice_parse_polynomial("(x-1)(x-2)(x-3)", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("cubic has three roots", n == 3); precise("cubic 1", r[0], 1.0); precise("cubic 2", r[1], 2.0); precise("cubic 3", r[2], 3.0);
+      yes("parse x^2-2", rice_parse_polynomial("x^2-2", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("two irrational roots", n == 2); precise("-sqrt2", r[0], -sqrt(2.0)); precise("sqrt2", r[1], sqrt(2.0));
+      yes("parse 2x^2+7x+3", rice_parse_polynomial("2x^2+7x+3", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("fractional roots", n == 2); precise("root -3", r[0], -3.0); precise("root -1/2", r[1], -0.5);
+      yes("parse x^3-3x", rice_parse_polynomial("x^3-3x", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("three roots incl zero", n == 3); precise("-sqrt3", r[0], -sqrt(3.0)); precise("zero", r[1], 0.0); precise("sqrt3", r[2], sqrt(3.0));
+      yes("parse double root", rice_parse_polynomial("(x-1)^2(x+2)", &p, e, sizeof e));
+      n = rice_polynomial_real_roots(&p, -10, 10, r, 8);
+      yes("double root found once", n == 2); near("-2", r[0], -2.0); near("1", r[1], 1.0); }
+
+    /* inputs that once hung the parser (a constant followed by a bare point) must finish */
+    { double z; char e[96];
+      yes("e. is refused", !rice_eval_expression("e.", &z, e, sizeof e)); yes("pi. is refused", !rice_eval_expression("pi.", &z, e, sizeof e));
+      yes("(1). is refused", !rice_eval_expression("(1).", &z, e, sizeof e)); yes("2e.. is refused", !rice_eval_expression("2e..", &z, e, sizeof e));
+      yes("/log(e.^^tan(0 is refused", !rice_eval_expression("/log(e.^^tan(0", &z, e, sizeof e));
+      ev("e.5", RICE_TEST_E * 0.5); ev("pi.5", RICE_TEST_PI * 0.5); }
+
+    /* random expression fuzz: never crash, never loop (the alarm kills a stuck run) */
+    { static const char *const tok[] = { "0", "1", "2", "5", "9", ".", "+", "-", "*", "/", "^", "(", ")", "pi", "e", "sin(", "cos(",
+          "tan(", "sqrt(", "ln(", "log(", "*10^", "e^(", "^2", "abs(" };
+      const int nt = (int)(sizeof tok / sizeof *tok);
+      char cur[64];
+      double z; char e[96];
+      alarm(30);
+      srand(12345);
+      for(int i = 0; i < 400000; i++) {
+          int len = 1 + rand() % 9;
+          cur[0] = '\0';
+          for(int j = 0; j < len; j++) { const char *t = tok[rand() % nt]; if(strlen(cur) + strlen(t) < 23) strcat(cur, t); }
+          (void)rice_eval_expression(cur, &z, e, sizeof e);
+      }
+      alarm(0);
+      checks++; }
 
     printf("RICE calc tests: %d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
