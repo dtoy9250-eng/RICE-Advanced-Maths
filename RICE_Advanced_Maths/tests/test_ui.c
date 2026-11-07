@@ -117,6 +117,7 @@ int main(void)
     expect("main menu hint", "X", "Fractions, surds, bounds");
     expect("submenu", "1", "Quick calculate");
     expect("history starts empty", "6", "Nothing saved yet.");
+    expect("history starts empty", "6", "Nothing saved yet.");
 
     /* ---- number tools ---- */
     expect("quick multiply", "1 1 12 E * E 5 E", "12 x 5 = 60");
@@ -222,7 +223,7 @@ int main(void)
 
     /* ---- statistics ---- */
     expect("summary", "4 1 F2 1 E 2 E 3 E 4 E 5 E F1", "Mean = 3      Median = 3");
-    expect("summary quartiles", "4 1 1 E 2 E 3 E 4 E 5 E F1", "Q1 = 1.5    Q3 = 4.5    IQR = 3");
+    expect("summary quartiles", "4 1 F2 1 E 2 E 3 E 4 E 5 E F1", "Q1 = 1.5    Q3 = 4.5    IQR = 3");
     expect("summary mode", "4 1 F2 1 E 2 E 2 E 3 E 3 E F1", "Mode: 2, 3  (appears 2 times)");
     expect("summary needs two values", "4 1 F2 5 E F1", "Enter at least 2 values");
     expect("summary data is remembered", "4 1 F2 1 E 2 E 3 E F1 E 2 F1", "3 values, 3 different");
@@ -233,10 +234,10 @@ int main(void)
     expect("histogram bad classes", "4 3 F2 1 E 2 E F1 9 F1", "Use a whole number from 2 to 8");
     expect("box plot", "4 5 F2 1 E 2 E 3 E 4 E 5 E F1", "Lower quartile Q1: 1.5");
     expect("regression", "4 6 F2 1 E 2 E 2 E 4 E 3 E 6 E F1", "y = 2x");
-    expect("regression correlation", "4 6 1 E 2 E 2 E 4 E 3 E 6 E F1", "Correlation r = 1");
+    expect("regression correlation", "4 6 F2 1 E 2 E 2 E 4 E 3 E 6 E F1", "Correlation r = 1");
     expect("regression with intercept", "4 6 F2 1 E 3 E 2 E 5 E 3 E 7 E F1", "y = 2x + 1");
     expect_absent("regression never prints nan", "4 6 F2 1 E 5 E 2 E 5 E 3 E 5 E F1", "nan");
-    expect("regression undefined r", "4 6 1 E 5 E 2 E 5 E 3 E 5 E F1", "Correlation r is undefined");
+    expect("regression undefined r", "4 6 F2 1 E 5 E 2 E 5 E 3 E 5 E F1", "Correlation r is undefined");
     expect("table incomplete row", "4 6 F2 1 E F1", "Row 1 is incomplete");
 
     /* ---- geometry ---- */
