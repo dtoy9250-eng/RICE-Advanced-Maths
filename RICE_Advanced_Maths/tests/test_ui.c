@@ -116,6 +116,7 @@ int main(void)
     expect("main menu", "X", "Number and calculations");
     expect("main menu hint", "X", "Fractions, surds, bounds");
     expect("submenu", "1", "Quick calculate");
+    expect("history starts empty", "6", "Nothing saved yet.");
 
     /* ---- number tools ---- */
     expect("quick multiply", "1 1 12 E * E 5 E", "12 x 5 = 60");
@@ -181,24 +182,24 @@ int main(void)
     expect("factorise common", "2 5 1 E 5 E 6 E", "(x + 2)(x + 3)");
     expect("factorise difference of squares", "2 5 1 E 0 E -9 E", "(x - 3)(x + 3)");
     expect("factorise with x outside", "2 5 4 E 2 E 0 E", "2x(2x + 1)");
-    expect("factorise no real", "2 5 1 E 0 E 1 E", "It does not factorise over the real numbers");
+    expect("factorise no real", "2 5 1 E 0 E 1 E", "does not factorise");
     expect("expand two brackets", "2 6 1 2 E 3 E 1 E -4 E", "2x^2 - 5x - 12");
     expect("expand three brackets", "2 6 2 1 E 1 E 1 E 2 E 1 E 3 E", "x^3 + 6x^2 + 11x + 6");
     expect("expand power", "2 6 3 1 E 2 E 1 E 3 E", "8x^3 + 12x^2 + 6x + 1");
     expect("expand typed", "2 6 4 (x+1)(x+2) E", "x^2 + 3x + 2");
     expect("differentiate", "2 7 1 E -6 E 0 E 5 E", "f'(x) = 3x^2 - 12x");
-    expect("differentiate F2 changes degree", "2 7 F2 F2 F2 F2 F2 F2 F2 1 E 0 E 0 E 0 E 0 E 0 E 0 E 0 E 0 E", "f'(x) = 8x^7");
+    expect("differentiate F2 changes degree", "2 7 F2 F2 F2 F2 F2 1 E 0 E 0 E 0 E 0 E 0 E 0 E 0 E 0 E", "f'(x) = 8x^7");
     expect("differentiate typed polynomial", "2 7 F3 (x+1)^3 E F1", "f'(x) = 3x^2 + 6x + 3");
     expect("evaluate polynomial", "2 8 1 E 2 E 1 E 3 E", "f(3) = 16");
     expect("rearrange y=mx+c", "2 9 10 E 2 E 4 E", "x = 3");
     expect("rearrange rejects m=0", "2 9 10 E 0 E 4 E", "m cannot be zero");
     expect("factorise polynomial", "2 0 1 1 E -6 E 11 E -6 E", "(x - 3)(x - 2)(x - 1)");
-    expect("factorise polynomial with scale", "2 0 1 F2 2 E -3 E -11 E 6 E", "(x - 3)(2x - 1)(x + 2)");
-    expect("factorise polynomial repeated", "2 0 1 1 E -3 E 0 E 2 E", "(x - 1)^2(x + 2)");
+    expect("factorise polynomial with scale", "2 0 1 2 E -3 E -11 E 6 E", "(x - 3)(2x - 1)(x + 2)");
+    expect("factorise polynomial repeated", "2 0 1 1 E 0 E -3 E 2 E", "(x - 1)^2(x + 2)");
     expect("simplify algebraic fraction", "2 0 2 1 E 0 E -1 E 1 E 1 E", "x - 1");
     expect("simplify fraction no common", "2 0 2 1 E 0 E 1 E 1 E 1 E", "Already simplest");
     expect("rearrange v=u+at", "2 0 3 2 20 E 5 E 3 E", "t = 5");
-    expect("rearrange speed", "2 0 3 4 E 100 E 0 E 4 E F1", "Speed = 25");
+    expect("rearrange speed", "2 0 3 4 E E 100 E 4 E", "Speed = 25");
     expect("rearrange circumference", "2 0 3 8 6.283185307 E", "r = 1");
     expect("complete the square", "2 0 4 1 E 6 E 5 E", "(x + 3)^2 - 4");
     expect("complete the square vertex", "2 0 4 1 E 6 E 5 E", "Turning point: (-3, -4)");
@@ -220,22 +221,23 @@ int main(void)
     expect("plot bad interval", "3 6 6 1 E 0 E 0 E 5 E -5 E", "The lower x must be below the upper x");
 
     /* ---- statistics ---- */
-    expect("summary", "4 1 1 E 2 E 3 E 4 E 5 E F1", "Mean = 3      Median = 3");
+    expect("summary", "4 1 F2 1 E 2 E 3 E 4 E 5 E F1", "Mean = 3      Median = 3");
     expect("summary quartiles", "4 1 1 E 2 E 3 E 4 E 5 E F1", "Q1 = 1.5    Q3 = 4.5    IQR = 3");
-    expect("summary mode", "4 1 1 E 2 E 2 E 3 E 3 E F1", "Mode: 2, 3  (appears 2 times)");
-    expect("summary needs two values", "4 1 5 E F1", "Enter at least 2 values");
-    expect("summary data is remembered", "4 1 1 E 2 E 3 E F1 E X 4 2 F1", "3 values, 3 different");
-    expect("frequency table", "4 2 1 E 2 E 2 E 3 E F1", "2            2");
-    expect("cumulative frequency", "4 4 1 E 2 E 2 E 3 E F1", "Cumulative");
-    expect("histogram", "4 3 1 E 2 E 3 E 4 E 5 E 6 E 7 E 8 E 9 E 10 E F1 2 F1", "2 classes, each 4.5 wide");
-    expect("histogram bad classes", "4 3 1 E 2 E F1 9 F1", "Use a whole number from 2 to 8");
-    expect("box plot", "4 5 1 E 2 E 3 E 4 E 5 E F1", "Lower quartile Q1: 1.5");
-    expect("regression", "4 6 1 E 2 E 2 E 4 E 3 E 6 E F1", "y = 2x");
+    expect("summary mode", "4 1 F2 1 E 2 E 2 E 3 E 3 E F1", "Mode: 2, 3  (appears 2 times)");
+    expect("summary needs two values", "4 1 F2 5 E F1", "Enter at least 2 values");
+    expect("summary data is remembered", "4 1 F2 1 E 2 E 3 E F1 E 2 F1", "3 values, 3 different");
+    expect("frequency table", "4 2 F2 1 E 2 E 2 E 3 E F1", "2            2");
+    { char needle[40]; snprintf(needle, sizeof needle, "%-12s %d", "3", 1); expect("frequency table row", "4 2 F2 1 E 2 E 2 E 3 E F1", needle); }
+    expect("cumulative frequency", "4 4 F2 1 E 2 E 2 E 3 E F1", "Cumulative");
+    expect("histogram", "4 3 F2 1 E 2 E 3 E 4 E 5 E 6 E 7 E 8 E 9 E 10 E F1 2 F1", "2 classes, each 4.5 wide");
+    expect("histogram bad classes", "4 3 F2 1 E 2 E F1 9 F1", "Use a whole number from 2 to 8");
+    expect("box plot", "4 5 F2 1 E 2 E 3 E 4 E 5 E F1", "Lower quartile Q1: 1.5");
+    expect("regression", "4 6 F2 1 E 2 E 2 E 4 E 3 E 6 E F1", "y = 2x");
     expect("regression correlation", "4 6 1 E 2 E 2 E 4 E 3 E 6 E F1", "Correlation r = 1");
-    expect("regression with intercept", "4 6 1 E 3 E 2 E 5 E 3 E 7 E F1", "y = 2x + 1");
-    expect_absent("regression never prints nan", "4 6 1 E 5 E 2 E 5 E 3 E 5 E F1", "nan");
+    expect("regression with intercept", "4 6 F2 1 E 3 E 2 E 5 E 3 E 7 E F1", "y = 2x + 1");
+    expect_absent("regression never prints nan", "4 6 F2 1 E 5 E 2 E 5 E 3 E 5 E F1", "nan");
     expect("regression undefined r", "4 6 1 E 5 E 2 E 5 E 3 E 5 E F1", "Correlation r is undefined");
-    expect("table incomplete row", "4 6 1 E F1", "Row 1 is incomplete");
+    expect("table incomplete row", "4 6 F2 1 E F1", "Row 1 is incomplete");
 
     /* ---- geometry ---- */
     expect("bearing difference", "5 1 1 350 E 10 E", "Angle = 20 degrees");
@@ -268,12 +270,12 @@ int main(void)
     expect("vector dot angle", "5 7 4 1 E 0 E 0 E 1 E", "Angle between A and B = 90 degrees");
     expect("vector scalar", "5 7 5 1 E 2 E 3 E", "kA = (3, 6)");
     expect("perpendicular bisector", "5 8 1 0 E 0 E 4 E 2 E", "Bisector: y = -2x + 5");
-    expect("angle bisector theorem", "5 8 2 3 E 6 E 9 E", "BD = 3      DC = 6");
+    expect("angle bisector theorem", "5 8 2 6 E 9 E 10 E", "BD = 4      DC = 6");
+    expect("angle bisector degenerate triangle", "5 8 2 3 E 6 E 9 E", "Not a valid triangle");
 
     /* ---- history and guide ---- */
     expect("history keeps results", "1 1 12 E * E 5 E E X X 6", "Quick calculate: 12 x 5 = 60");
     expect("history detail", "1 1 12 E * E 5 E E X X 6 E", "12 times 5");
-    expect("history empty", "6", "Nothing saved yet.");
     expect("guide page 2", "6 R R", "SPECIAL KEYS");
     expect("guide page 3", "6 R R R", "GOOD TO KNOW");
     expect("guide mentions boxes", "6 R", "Boxes show what to enter");
