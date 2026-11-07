@@ -14,6 +14,11 @@ typedef struct {
 int rice_eval_expression(const char *expression, double *answer,
                          char *error, size_t error_size);
 
+/* Degree-based trig with exact values at multiples of 30/45/90 degrees. */
+double rice_sin_deg(double degrees);
+double rice_cos_deg(double degrees);
+int rice_tan_deg(double degrees, double *out); /* 0 when undefined */
+
 /* Parse, simplify and expand a univariate polynomial expression in x.
    Supports +, -, *, / by a non-zero constant, parentheses, implicit
    multiplication (2x and (x+1)(x+2)), and integer powers 0..8. */
