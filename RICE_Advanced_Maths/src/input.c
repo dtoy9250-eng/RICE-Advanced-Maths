@@ -297,6 +297,7 @@ int ui_form_run(const UiForm *f, UiFormState *st)
     form_layout(f, &L);
     keys[0] = f->action ? f->action : "CALC";
     for(int i = 0; i < 5; i++) keys[i + 1] = f->fkeys[i];
+    if(!f->fkeys[4]) keys[5] = "BACK";
     for(;;) {
         int bad = 0, cur = st->cursor;
         char status[96] = "", live[64] = "";
@@ -343,6 +344,7 @@ int ui_form_run(const UiForm *f, UiFormState *st)
             if(k == KEY_F2 || k == KEY_F3 || k == KEY_F4 || k == KEY_F5 || k == KEY_F6) {
                 int idx = k == KEY_F2 ? 0 : k == KEY_F3 ? 1 : k == KEY_F4 ? 2 : k == KEY_F5 ? 3 : 4;
                 if(f->fkeys[idx]) return 2 + idx;
+                if(k == KEY_F6) return UI_CANCEL;
                 continue;
             }
             if(k == KEY_EXE) {
