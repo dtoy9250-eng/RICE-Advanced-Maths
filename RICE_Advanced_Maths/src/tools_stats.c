@@ -99,7 +99,7 @@ static void stats_histogram(void)
         }
         ui_result(f.title, lines, n, 1);
         {
-            static const char *const keys[6] = { "BACK", NULL, NULL, NULL, NULL, NULL };
+            static const char *const keys[6] = { NULL, NULL, NULL, NULL, NULL, "BACK" };
             int cx = 32, cy = 44, cw = 332, ch = 112, gap = 5, bw = (cw - gap * (bins - 1)) / bins;
             ui_begin("Histogram");
             drect(cx - 2, cy + ch, cx + cw, cy + ch, UI_MUTED);
@@ -113,7 +113,7 @@ static void stats_histogram(void)
             ui_text_box(10, UI_W - 10, 188, UI_MUTED, "Bar height = frequency. Labels show where each class starts.", 0);
             ui_keybar(keys);
             dupdate();
-            { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1); }
+            { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1 && k != KEY_F6); }
         }
     }
 }
@@ -133,7 +133,7 @@ static void stats_boxplot(void)
     lines[n++] = tp("Maximum: %s", tf(s.max));
     ui_result("Box plot data", lines, n, 1);
     {
-        static const char *const keys[6] = { "BACK", NULL, NULL, NULL, NULL, NULL };
+        static const char *const keys[6] = { NULL, NULL, NULL, NULL, NULL, "BACK" };
         double range = s.max - s.min;
         int left = 30, width = 336, y = 88;
         int px0, px1, pq1, pm, pq3;
@@ -158,7 +158,7 @@ static void stats_boxplot(void)
         ui_text_box(10, UI_W - 10, 188, UI_MUTED, "Whiskers: min and max.  Box: Q1 to Q3.  Line: median.", 0);
         ui_keybar(keys);
         dupdate();
-        { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1); }
+        { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1 && k != KEY_F6); }
     }
 }
 
