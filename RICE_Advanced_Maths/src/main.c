@@ -8,6 +8,8 @@
 
 static void run_category(int category)
 {
+    static const char *const names[] = { "Number", "Algebra", "Equations", "Statistics", "Geometry", "" };
+    ui_set_section(names[category]);
     switch(category) {
     case 0: tools_number_menu(); break;
     case 1: tools_algebra_menu(); break;
@@ -16,6 +18,7 @@ static void run_category(int category)
     case 4: tools_geometry_menu(); break;
     default: ui_history_screen(); break;
     }
+    ui_set_section("");
 }
 
 static void main_menu(void)
