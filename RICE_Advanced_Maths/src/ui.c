@@ -100,16 +100,31 @@ void ui_rect_outline(int x0, int y0, int x1, int y1, int colour)
     drect(x1, y0, x1, y1, colour);
 }
 
+static const char *current_section = "";
+
+void ui_set_section(const char *name) { current_section = name ? name : ""; }
+
 void ui_begin(const char *title)
 {
-    int bx;
+    int bx, x;
     dclear(UI_BG);
     drect(0, 0, UI_W - 1, HEADER_H - 1, UI_PANEL2);
     drect(0, HEADER_H, UI_W - 1, HEADER_H, UI_CYAN);
     dtext(10, 8, UI_CYAN, "RICE");
     bx = 10 + ui_width("RICE") + 8;
     drect(bx, 5, bx, HEADER_H - 6, UI_LINE);
-    ui_text_box(bx + 8, UI_W - 10, 8, UI_WHITE, title, 0);
+    x = bx + 8;
+    /* breadcrumb: shown inside tools, not on the group's own menu (whose title starts with the section) */
+    if(current_section[0] && strncmp(title, current_section, strlen(current_section)) != 0) {
+        char crumb[48];
+        int w;
+        snprintf(crumb, sizeof crumb, "%.30s  >", current_section);
+        w = ui_width(crumb);
+        if(w > 120) w = 120;
+        ui_text_box(x, x + w, 8, UI_MUTED, crumb, 0);
+        x += w + 8;
+    }
+    ui_text_box(x, UI_W - 10, 8, UI_WHITE, title, 0);
 }
 
 void ui_keybar(const char *const labels[6])
@@ -181,7 +196,13 @@ int ui_menu(const char *title, const char *const *items, int count, const char *
             drect(UI_W - 10, 32, UI_W - 8, 32 + track, UI_PANEL);
             drect(UI_W - 10, 32 + pos, UI_W - 8, 32 + pos + thumb, UI_CYAN);
         }
-        if(hints && hints[sel]) ui_text_box(12, UI_W - 12, 184, UI_MUTED, hints[sel], 0);
+        if(hints && hints[sel]) ui_text_box(12, UI_W - 12, 174, UI_WHITE, hints[sel], 0);
+        {
+            char pos[32];
+            snprintf(pos, sizeof pos, "%d of %d", sel + 1, count);
+            ui_text_box(12, UI_W / 2, 187, UI_MUTED, "Press a number to jump", 0);
+            ui_text_box(UI_W / 2, UI_W - 12, 187, UI_MUTED, pos, 2);
+        }
         ui_keybar(keys);
         dupdate();
         {
@@ -258,7 +279,7 @@ static void wrap_text(const char *s, int max_w, int *n)
 
 static void result_screen(const char *title, const char *const *lines, int count, int save, int is_error)
 {
-    static const char *const keys[6] = { "BACK", NULL, NULL, NULL, NULL, NULL };
+    static const char *const keys[6] = { NULL, NULL, NULL, NULL, NULL, "BACK" };
     int head_rows = 0, detail_rows, top = 0, panel_h, y0, visible;
     char head[3][WRAP_LEN];
     int accent = is_error ? UI_RED : UI_CYAN;
@@ -309,7 +330,7 @@ static void result_screen(const char *title, const char *const *lines, int count
         dupdate();
         {
             int k = ui_key();
-            if(k == KEY_EXE || k == KEY_EXIT || k == KEY_F1) break;
+            if(k == KEY_EXE || k == KEY_EXIT || k == KEY_F1 || k == KEY_F6) break;
             if(k == KEY_UP && top > 0) top--;
             else if(k == KEY_DOWN && top + visible < detail_rows) top++;
         }
@@ -342,7 +363,7 @@ static const char *const guide_pages[3][7] = {
       "Arrow keys move between boxes; DEL erases.",
       "Boxes accept sums such as 1/3 or 2*pi.",
       "F1 calculates from any box.",
-      "EXIT goes back one screen.",
+      "EXIT or F6 goes back one screen.",
       "In menus, press a number to jump." },
     { "x10^ key       times ten to the power",
       "SHIFT x^2      square root",
