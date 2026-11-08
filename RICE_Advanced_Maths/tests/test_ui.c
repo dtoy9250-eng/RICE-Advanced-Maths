@@ -117,7 +117,16 @@ int main(void)
     expect("main menu hint", "X", "Fractions, surds, bounds");
     expect("submenu", "1", "Quick calculate");
     expect("history starts empty", "6", "Nothing saved yet.");
-    expect("history starts empty", "6", "Nothing saved yet.");
+    expect("breadcrumb inside a tool", "2 4", "Algebra  >");
+    expect("breadcrumb for equations", "3 1", "Equations  >");
+    expect("breadcrumb for statistics", "4 1", "Statistics  >");
+    expect_absent("no breadcrumb on a group's own menu", "2", "Algebra  >");
+    expect("menu shows position", "2", "1 of 10");
+    expect("menu says how to jump", "2", "Press a number to jump");
+    expect("menu position follows the cursor", "2 D D", "3 of 10");
+    expect("F6 backs out of a form", "2 1 F6 4 E 1 E 1 E 6 E", "Quadratic");
+    expect("F6 backs out of a result", "2 1 2 E 3 E 11 E F6 F6 F6 4 1 E 0 E 1 E", "Quadratic");
+    expect("keybar shows BACK", "2 1", "BACK");
 
     /* ---- number tools ---- */
     expect("quick multiply", "1 1 12 E * E 5 E", "12 x 5 = 60");
