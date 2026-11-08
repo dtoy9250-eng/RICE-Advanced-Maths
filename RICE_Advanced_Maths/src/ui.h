@@ -40,6 +40,7 @@ void ui_text_box(int x0, int x1, int y, int colour, const char *s, int align);
 int ui_math_text(int x, int y, int colour, const char *s);
 int ui_math_width(const char *s);
 void ui_begin(const char *title);                      /* clear + header bar */
+void ui_set_section(const char *name);                 /* shown before the title: "Algebra  > Title" */
 void ui_keybar(const char *const labels[6]);           /* Casio-style F-key bar */
 void ui_rect_outline(int x0, int y0, int x1, int y1, int colour);
 key_event_t ui_key_event(void);                        /* waits for a key press */
