@@ -207,7 +207,7 @@ static void graph_plot(void)
     double ex[6];
     memset(&ps, 0, sizeof ps);
     while(ui_poly_form(&pf, &ps, p, ex)) {
-        static const char *const keys[6] = { "BACK", NULL, NULL, NULL, NULL, NULL };
+        static const char *const keys[6] = { NULL, NULL, NULL, NULL, NULL, "BACK" };
         double lo = ex[0], hi = ex[1], ymin = INFINITY, ymax = -INFINITY;
         int x0 = 44, y0 = 32, w = 336, h = 136, lastx = -1, lasty = -1;
         char label[48];
@@ -243,7 +243,7 @@ static void graph_plot(void)
         ui_text_box(x0, x0 + w, 188, UI_WHITE, tp("f(x) = %s", poly_text(&p[0])), 0);
         ui_keybar(keys);
         dupdate();
-        { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1); }
+        { int k; do { k = ui_key(); } while(k != KEY_EXE && k != KEY_EXIT && k != KEY_F1 && k != KEY_F6); }
     }
 }
 
